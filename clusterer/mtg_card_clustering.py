@@ -6,6 +6,15 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import silhouette_score
 import matplotlib.pyplot as plt
+from nltk.stem import PorterStemmer
+from stop_words import MTG_STOP_WORDS
+
+
+def stem_sentences(sentence: str):
+    tokens = sentence.split()
+    stop_word_free = [word for word in tokens if not word in MTG_STOP_WORDS]
+    stemmed_tokens = [porter_stemmer.stem(token) for token in stop_word_free]
+    return " ".join(stemmed_tokens)
 
 
 df = pd.read_json("./data/long_data.json", "values")
@@ -18,6 +27,18 @@ non_pw_legal_df.set_index("id", inplace=True)
 # Drop rows with missing labels
 non_pw_legal_df.dropna(subset=["oracle_text"], inplace=True)
 
+# Replace card names with CARD_NAME to reduce the size of vocabulary
+non_pw_legal_df["oracle_text"] = non_pw_legal_df.apply(
+    lambda x: str(x["oracle_text"]).replace(x["name"], "CARD_NAME"),
+    axis=1,
+)
+
+porter_stemmer = PorterStemmer()
+
+non_pw_legal_df["oracle_text"] = non_pw_legal_df["oracle_text"].apply(
+    stem_sentences,
+)
+
 
 # Step 2: Explore the data
 
@@ -29,21 +50,18 @@ from sklearn.cluster import KMeans
 col = ["oracle_text", "name"]
 data = non_pw_legal_df[col]
 
-
 vectorizer = TfidfVectorizer(
-    stop_words="english", strip_accents="unicode", lowercase=True
+    stop_words=MTG_STOP_WORDS, strip_accents="unicode", lowercase=True
 )
-# TODO: make sure what the params are
-# vectorizer = TfidfVectorizer(sublinear_tf= True, min_df=10, norm='l2', ngram_range=(1, 2), stop_words='english')
 
 features = vectorizer.fit_transform(data["oracle_text"])
 
-k = 10
-kmin = 100
-kmax = 150
+k = 24
+kmin = 1
+kmax = 50
 init = "k-means++"
-max_iter = 300
-n_init = 10
+max_iter = 400
+n_init = 20
 
 model = KMeans(n_clusters=k, init=init, max_iter=max_iter, n_init=n_init)
 model.fit(features)
@@ -144,15 +162,33 @@ def elbow_method(Y_sklearn):
     return (number_clusters, score)
 
 
-val1 = elbow_method(features)
-fig, ax = plt.subplots()
-ax.set_xlim(kmin - 1, kmax)
-ax.plot(val1[0], val1[1], color="green")
+distortions = []
+K = range(kmin, kmax)
+for k in K:
+    print(f"----- Here we go: {k}")
+    kmeanModel = KMeans(n_clusters=k, init=init, max_iter=max_iter, n_init=n_init)
+    kmeanModel.fit(features)
+    distortions.append(kmeanModel.inertia_)
 
-plt.xlabel("Number of Clusters")
-plt.ylabel("Score")
-plt.title("Elbow Method")
+# inertia here is referring to total sum of squares (or inertia) I of a cluster
+
+plt.figure(figsize=(16, 8))
+plt.plot(K, distortions, "bx-")
+plt.xlabel("k")
+plt.ylabel("Distortion")
+plt.title("The Elbow Method showing the optimal k")
 plt.show()
 
 
-elbow_method(features)
+# val1 = elbow_method(features)
+# fig, ax = plt.subplots()
+# ax.set_xlim(kmin - 1, kmax)
+# ax.plot(val1[0], val1[1], color="green")
+
+# plt.xlabel("Number of Clusters")
+# plt.ylabel("Score")
+# plt.title("Elbow Method")
+# plt.show()
+
+
+# elbow_method(features)
