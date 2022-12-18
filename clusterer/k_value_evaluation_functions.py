@@ -59,7 +59,7 @@ def calculate_WSS(
 
 
 def elbow_method(
-    Y_sklearn, KMeans, kmin: int, kmax: int, init: int, max_iter: int, n_init: int
+    features, KMeans, kmin: int, kmax: int, init: int, max_iter: int, n_init: int
 ):
     """
     This is the function used to get optimal number of clusters in order to feed to the k-means clustering algorithm.
@@ -69,12 +69,12 @@ def elbow_method(
         kmin, kmax
     )  # Range of possible clusters that can be generated
     kmeans = [
-        KMeans(n_clusters=i, init=init, max_iter=max_iter, n_init=n_init).fit(Y_sklearn)
+        KMeans(n_clusters=i, init=init, max_iter=max_iter, n_init=n_init).fit(features)
         for i in number_clusters
     ]  # Getting no. of clusters
 
     score = [
-        kmeans[i].fit(Y_sklearn).score(Y_sklearn) for i in range(len(kmeans))
+        kmeans[i].fit(features).score(features) for i in range(len(kmeans))
     ]  # Getting score corresponding to each cluster.
     score = [i * -1 for i in score]  # Getting list of positive scores.
     return (number_clusters, score)
