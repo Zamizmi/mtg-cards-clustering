@@ -23,12 +23,9 @@ non_pw_legal_data.set_index("id", inplace=True)
 # Drop rows with missing labels
 # non_pw_legal_data.dropna(subset=["oracle_text"], inplace=True)
 
-from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 
 k = 25
-kmin = 1
-kmax = 75
 init = "k-means++"
 max_iter = 400
 n_init = 20
@@ -65,24 +62,25 @@ def find_optimal_clusters(data, max_k):
 
 def plot_tsne_pca(data, labels):
     max_label = max(labels)
-    max_items = np.random.choice(range(data.shape[0]), size=3000, replace=False)
+    max_items = np.random.choice(range(data.shape[0]), size=23000, replace=False)
 
     pca = PCA(n_components=2).fit_transform(data[max_items, :].todense())
     tsne = TSNE().fit_transform(
-        PCA(n_components=50).fit_transform(data[max_items, :].todense())
+        PCA(n_components=20).fit_transform(data[max_items, :].todense())
     )
 
-    idx = np.random.choice(range(pca.shape[0]), size=300, replace=False)
+    idx = np.random.choice(range(pca.shape[0]), size=23000, replace=False)
     label_subset = labels[max_items]
     label_subset = [cm.hsv(i / max_label) for i in label_subset[idx]]
 
     f, ax = plt.subplots(1, 2, figsize=(14, 6))
 
-    ax[0].scatter(pca[idx, 0], pca[idx, 1], c=label_subset)
+    ax[0].scatter(pca[idx, 0], pca[idx, 1], c=label_subset, marker=".", s=[3])
     ax[0].set_title("PCA Cluster Plot")
 
-    ax[1].scatter(tsne[idx, 0], tsne[idx, 1], c=label_subset)
+    ax[1].scatter(tsne[idx, 0], tsne[idx, 1], c=label_subset, marker=".", s=[3])
     ax[1].set_title("TSNE Cluster Plot")
+
     plt.show()
 
 
@@ -101,4 +99,4 @@ def get_top_keywords(data, clusters, labels, n_terms):
         print(",".join([labels[t] for t in np.argsort(r)[-n_terms:]]))
 
 
-get_top_keywords(text, clusters, vectorizer.get_feature_names(), 10)
+get_top_keywords(text, clusters, vectorizer.get_feature_names(), 20)
