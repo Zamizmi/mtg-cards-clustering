@@ -5,6 +5,10 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 from data_preparement import get_features_and_prepare_data
 
 full_data = pd.read_json("./data/long_data.json", "values")
@@ -22,60 +26,79 @@ non_pw_legal_data.set_index("id", inplace=True)
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 
-k = 24
-kmin = 2
-kmax = 50
+k = 25
+kmin = 1
+kmax = 75
 init = "k-means++"
 max_iter = 400
 n_init = 20
 
-# fully_prepared = get_features_and_prepare_data(
-#     non_pw_legal_data, kmin, kmax, init, max_iter, n_init, True, False, True
-# )
-
-# features = fully_prepared[1]
-
-# model = KMeans(n_clusters=k, init=init, max_iter=max_iter, n_init=n_init)
-# model.fit(features)
-
-# non_pw_legal_df["cluster"] = model.labels_
-
-# output the result to a text file.
-
-# clusters = non_pw_legal_df.groupby("cluster")
-
-# for cluster in clusters.groups:
-#     f = open("results/cluster" + str(cluster) + ".csv", "w")  # create csv file
-#     data = clusters.get_group(cluster)[
-#         ["oracle_text", "name"]
-#     ]  # get title and overview columns
-#     f.write(data.to_csv(index_label="id", sep="€"))  # set index to id
-#     f.close()
-
-# print("Cluster centroids: \n")
-# order_centroids = model.cluster_centers_.argsort()[:, ::-1]
-# terms = vectorizer.get_feature_names_out()
-
-# for i in range(k):
-#     print("Cluster %d:" % i)
-#     for j in order_centroids[i, :10]:  # print out 10 feature terms of each cluster
-#         print(" %s" % terms[j])
-#     print("------------")
-
-fully_prepared = get_features_and_prepare_data(
-    non_pw_legal_data, kmin, kmax, init, max_iter, n_init, True, True, True
+full_features, text, vectorizer = get_features_and_prepare_data(
+    non_pw_legal_data, True, True, True
 )
 
-no_preparements = get_features_and_prepare_data(
-    non_pw_legal_data, kmin, kmax, init, max_iter, n_init, False, False, False
-)
 
-plt.figure(figsize=(16, 8))
-plt.plot(fully_prepared[0], fully_prepared[1], "bx-")
-plt.plot(no_preparements[0], no_preparements[1], "rx-")
-plt.plot(fully_prepared[0], fully_prepared[3], "gx-")
-plt.plot(no_preparements[0], no_preparements[3], "yx-")
-plt.xlabel("k")
-plt.ylabel("Distortion")
-plt.title("The Elbow Method showing the optimal k")
-plt.show()
+def find_optimal_clusters(data, max_k):
+    iters = range(2, max_k + 1, 2)
+
+    sse = []
+    for k in iters:
+        sse.append(
+            KMeans(n_clusters=k, init=init, max_iter=max_iter, n_init=n_init)
+            .fit(data)
+            .inertia_
+        )
+        print("Fit {} clusters".format(k))
+
+    f, ax = plt.subplots(1, 1)
+    ax.plot(iters, sse, marker="o")
+    ax.set_xlabel("Cluster Centers")
+    ax.set_xticks(iters)
+    ax.set_xticklabels(iters)
+    ax.set_ylabel("SSE")
+    ax.set_title("SSE by Cluster Center Plot")
+    plt.show()
+
+
+# find_optimal_clusters(full_features, 100)
+
+
+def plot_tsne_pca(data, labels):
+    max_label = max(labels)
+    max_items = np.random.choice(range(data.shape[0]), size=3000, replace=False)
+
+    pca = PCA(n_components=2).fit_transform(data[max_items, :].todense())
+    tsne = TSNE().fit_transform(
+        PCA(n_components=50).fit_transform(data[max_items, :].todense())
+    )
+
+    idx = np.random.choice(range(pca.shape[0]), size=300, replace=False)
+    label_subset = labels[max_items]
+    label_subset = [cm.hsv(i / max_label) for i in label_subset[idx]]
+
+    f, ax = plt.subplots(1, 2, figsize=(14, 6))
+
+    ax[0].scatter(pca[idx, 0], pca[idx, 1], c=label_subset)
+    ax[0].set_title("PCA Cluster Plot")
+
+    ax[1].scatter(tsne[idx, 0], tsne[idx, 1], c=label_subset)
+    ax[1].set_title("TSNE Cluster Plot")
+    plt.show()
+
+
+clusters = KMeans(
+    n_clusters=k, init=init, max_iter=max_iter, n_init=n_init
+).fit_predict(full_features)
+
+plot_tsne_pca(full_features, clusters)
+
+
+def get_top_keywords(data, clusters, labels, n_terms):
+    df = pd.DataFrame(data.todense()).groupby(clusters).mean()
+
+    for i, r in df.iterrows():
+        print("\nCluster {}".format(i))
+        print(",".join([labels[t] for t in np.argsort(r)[-n_terms:]]))
+
+
+get_top_keywords(text, clusters, vectorizer.get_feature_names(), 10)

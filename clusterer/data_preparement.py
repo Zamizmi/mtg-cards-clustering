@@ -17,11 +17,6 @@ def stem_sentences(sentence: str):
 
 def get_features_and_prepare_data(
     data: pd.DataFrame,
-    kmin: 1,
-    kmax=50,
-    init="k-means++",
-    max_iter=400,
-    n_init=20,
     remove_card_names=True,
     stemming=True,
     stop_words=True,
@@ -77,22 +72,27 @@ def get_features_and_prepare_data(
         stop_words=None, strip_accents=strip_accents, lowercase=True
     )
 
+    vectorizer.fit(prepared_data["oracle_text"])
+    text = vectorizer.transform(prepared_data["oracle_text"])
     features = vectorizer.fit_transform(prepared_data["oracle_text"])
-    featuresBoW = bag_of_words_vectorizer.fit_transform(prepared_data["oracle_text"])
 
-    distortions = []
-    distortionsBoW = []
-    K = range(kmin, kmax + 1)
-    for k in K:
-        print(f"----- Here we go: {k}")
-        kmeanModel = KMeans(n_clusters=k, init=init, max_iter=max_iter, n_init=n_init)
-        kmeanModel.fit(features)
-        distortions.append(kmeanModel.inertia_)
+    # if features_only:
+    return features, text, vectorizer
+    # featuresBoW = bag_of_words_vectorizer.fit_transform(prepared_data["oracle_text"])
 
-        kmeanModelBoW = KMeans(
-            n_clusters=k, init=init, max_iter=max_iter, n_init=n_init
-        )
-        kmeanModelBoW.fit(featuresBoW)
-        distortionsBoW.append(kmeanModelBoW.inertia_)
+    # distortions = []
+    # distortionsBoW = []
+    # K = range(kmin, kmax + 1)
+    # for k in K:
+    #     print(f"----- Here we go: {k}")
+    #     kmeanModel = KMeans(n_clusters=k, init=init, max_iter=max_iter, n_init=n_init)
+    #     kmeanModel.fit(features)
+    #     distortions.append(kmeanModel.inertia_)
 
-    return [K, distortions, features, distortionsBoW, featuresBoW]
+    #     kmeanModelBoW = KMeans(
+    #         n_clusters=k, init=init, max_iter=max_iter, n_init=n_init
+    #     )
+    #     kmeanModelBoW.fit(featuresBoW)
+    #     distortionsBoW.append(kmeanModelBoW.inertia_)
+
+    # return [K, distortions, features, distortionsBoW, featuresBoW]
