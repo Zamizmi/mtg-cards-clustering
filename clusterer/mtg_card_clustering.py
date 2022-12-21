@@ -19,13 +19,9 @@ legal_data = full_data[
 non_pw_legal_data = legal_data[~legal_data["type_line"].str.contains("Planeswalker")]
 non_pw_legal_data.set_index("id", inplace=True)
 
-
-# Drop rows with missing labels
-# non_pw_legal_data.dropna(subset=["oracle_text"], inplace=True)
-
 from sklearn.cluster import KMeans
 
-k = 25
+k = 26
 init = "k-means++"
 max_iter = 400
 n_init = 20
@@ -66,7 +62,7 @@ def plot_tsne_pca(data, labels):
 
     pca = PCA(n_components=2).fit_transform(data[max_items, :].todense())
     tsne = TSNE().fit_transform(
-        PCA(n_components=20).fit_transform(data[max_items, :].todense())
+        PCA(n_components=50).fit_transform(data[max_items, :].todense())
     )
 
     idx = np.random.choice(range(pca.shape[0]), size=23000, replace=False)
@@ -88,7 +84,18 @@ clusters = KMeans(
     n_clusters=k, init=init, max_iter=max_iter, n_init=n_init
 ).fit_predict(full_features)
 
+
 plot_tsne_pca(full_features, clusters)
+
+
+# def save_to_csv(data):
+#     clusters_group = data.groupby("cluster")
+
+#     for cluster in clusters_group.groups:
+#         f = open("cluster" + str(cluster) + ".csv", "w")  # create csv file
+#         texts = clusters.get_group(cluster)[["name", "oracle_text"]]
+#         f.write(texts.to_csv(index_label="id"))  # set index to id
+#         f.close()
 
 
 def get_top_keywords(data, clusters, labels, n_terms):
@@ -99,4 +106,4 @@ def get_top_keywords(data, clusters, labels, n_terms):
         print(",".join([labels[t] for t in np.argsort(r)[-n_terms:]]))
 
 
-get_top_keywords(text, clusters, vectorizer.get_feature_names(), 20)
+# get_top_keywords(text, clusters, vectorizer.get_feature_names(), 20)

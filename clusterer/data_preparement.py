@@ -56,7 +56,7 @@ def get_features_and_prepare_data(
             axis=1,
         )
 
-    # Normalise words
+    # Normalise words with Stemming
     if stemming:
         prepared_data["oracle_text"] = prepared_data["oracle_text"].apply(
             stem_sentences,
@@ -68,31 +68,9 @@ def get_features_and_prepare_data(
         stop_words=None, strip_accents=strip_accents, lowercase=True
     )
 
-    bag_of_words_vectorizer = CountVectorizer(
-        stop_words=None, strip_accents=strip_accents, lowercase=True
-    )
-
     vectorizer.fit(prepared_data["oracle_text"])
     text = vectorizer.transform(prepared_data["oracle_text"])
     features = vectorizer.fit_transform(prepared_data["oracle_text"])
 
     # if features_only:
     return features, text, vectorizer
-    # featuresBoW = bag_of_words_vectorizer.fit_transform(prepared_data["oracle_text"])
-
-    # distortions = []
-    # distortionsBoW = []
-    # K = range(kmin, kmax + 1)
-    # for k in K:
-    #     print(f"----- Here we go: {k}")
-    #     kmeanModel = KMeans(n_clusters=k, init=init, max_iter=max_iter, n_init=n_init)
-    #     kmeanModel.fit(features)
-    #     distortions.append(kmeanModel.inertia_)
-
-    #     kmeanModelBoW = KMeans(
-    #         n_clusters=k, init=init, max_iter=max_iter, n_init=n_init
-    #     )
-    #     kmeanModelBoW.fit(featuresBoW)
-    #     distortionsBoW.append(kmeanModelBoW.inertia_)
-
-    # return [K, distortions, features, distortionsBoW, featuresBoW]
