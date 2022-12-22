@@ -18,8 +18,6 @@ And then install the needed packages with pip
 
 ### Clustering the cards
 
-Steps
-
 1. Move the cards in json-format to data/folder, and name as you wish eg. `mtg_card_data.json``
 2. Rename MTG_CARD_DATA_FILE variable in the file `/clusterer/mtg_card_clustering.py`
 3. run `python clusterer/mtg_card_clustering.py`
