@@ -26,7 +26,7 @@ def get_features_and_prepare_data(
     # many cards have no oracle text. Replace NaN with empty string
     prepared_data["oracle_text"] = prepared_data["oracle_text"].fillna("")
 
-    # Replace card names with CARD_NAME
+    # Remove card name from text
     if remove_card_names:
         prepared_data["oracle_text"] = prepared_data.apply(
             lambda x: str(x["oracle_text"]).replace(x["name"], ""),

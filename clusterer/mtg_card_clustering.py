@@ -11,7 +11,9 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from data_preparement import get_features_and_prepare_data
 
-full_data = pd.read_json("./data/long_data.json", "values")
+MTG_CARD_DATA_FILE = "long_data_2022-12-21.json"
+
+full_data = pd.read_json(f"./data/{MTG_CARD_DATA_FILE}", "values")
 
 legal_data = full_data[
     full_data["legalities"].astype(str).str.contains("""'commander': 'legal'""")
@@ -21,7 +23,7 @@ non_pw_legal_data.set_index("id", inplace=True)
 
 from sklearn.cluster import KMeans
 
-k = 26
+k = 26  # the number of clusters used in the study. Please play around with the number
 init = "k-means++"
 max_iter = 400
 n_init = 20
@@ -53,23 +55,24 @@ def find_optimal_clusters(data, max_k):
     plt.show()
 
 
-# find_optimal_clusters(full_features, 100)
+# Way to approximate the wanted k-value.
+# find_optimal_clusters(full_features, 60)
 
 
 def plot_tsne_pca(data, labels):
     max_label = max(labels)
-    max_items = np.random.choice(range(data.shape[0]), size=23000, replace=False)
+    max_items = range(data.shape[0])
 
     pca = PCA(n_components=2).fit_transform(data[max_items, :].todense())
     tsne = TSNE().fit_transform(
         PCA(n_components=50).fit_transform(data[max_items, :].todense())
     )
 
-    idx = np.random.choice(range(pca.shape[0]), size=23000, replace=False)
+    idx = range(pca.shape[0])
     label_subset = labels[max_items]
     label_subset = [cm.hsv(i / max_label) for i in label_subset[idx]]
 
-    f, ax = plt.subplots(1, 2, figsize=(14, 6))
+    f, ax = plt.subplots(2, 1, figsize=(10, 10))
 
     ax[0].scatter(pca[idx, 0], pca[idx, 1], c=label_subset, marker=".", s=[3])
     ax[0].set_title("PCA Cluster Plot")
@@ -84,18 +87,8 @@ clusters = KMeans(
     n_clusters=k, init=init, max_iter=max_iter, n_init=n_init
 ).fit_predict(full_features)
 
-
+# Visualise the clustering results
 plot_tsne_pca(full_features, clusters)
-
-
-# def save_to_csv(data):
-#     clusters_group = data.groupby("cluster")
-
-#     for cluster in clusters_group.groups:
-#         f = open("cluster" + str(cluster) + ".csv", "w")  # create csv file
-#         texts = clusters.get_group(cluster)[["name", "oracle_text"]]
-#         f.write(texts.to_csv(index_label="id"))  # set index to id
-#         f.close()
 
 
 def get_top_keywords(data, clusters, labels, n_terms):
@@ -106,4 +99,5 @@ def get_top_keywords(data, clusters, labels, n_terms):
         print(",".join([labels[t] for t in np.argsort(r)[-n_terms:]]))
 
 
-# get_top_keywords(text, clusters, vectorizer.get_feature_names(), 20)
+# uncomment after a few rounds to print the actual top terms from every cluster
+# get_top_keywords(text, clusters, vectorizer.get_feature_names(), 10)
