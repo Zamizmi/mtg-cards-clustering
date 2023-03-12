@@ -47,39 +47,56 @@ def find_optimal_clusters(data, max_k):
 
     f, ax = plt.subplots(1, 1)
     ax.plot(iters, sse, marker="o")
-    ax.set_xlabel("Cluster Centers")
+    ax.set_xlabel("Cluster Centers").set_fontsize(16)
     ax.set_xticks(iters)
     ax.set_xticklabels(iters)
-    ax.set_ylabel("SSE")
-    ax.set_title("SSE by Cluster Center Plot")
+    ax.set_ylabel("SSE").set_fontsize(16)
+    ax.set_title("SSE by Cluster Center Plot").set_fontsize(20)
+    plt.xticks(fontsize=14, rotation=90)
+    plt.yticks(fontsize=14)
     plt.show()
 
 
 # Way to approximate the wanted k-value.
-# find_optimal_clusters(full_features, 60)
+# find_optimal_clusters(full_features, 50)
 
 
-def plot_tsne_pca(data, labels):
+def plot_pca(data, labels):
     max_label = max(labels)
     max_items = range(data.shape[0])
 
-    pca = PCA(n_components=2).fit_transform(data[max_items, :].todense())
+    pca = PCA(n_components=0.99).fit_transform(data[max_items, :].todense())
+
+    idx = range(pca.shape[0])
+    label_subset = labels[max_items]
+    label_subset = [cm.hsv(i / max_label) for i in label_subset[idx]]
+
+    plt.scatter(pca[idx, 0], pca[idx, 1], c=label_subset, marker=".", s=[3])
+    plt.title("PCA Cluster Plot").set_fontsize(20)
+
+    plt.xticks(fontsize=14, rotation=90)
+    plt.yticks(fontsize=14)
+    plt.show()
+
+
+def plot_tsne(data, labels):
+    max_label = max(labels)
+    max_items = range(data.shape[0])
+
+    pca = PCA(n_components=0.99).fit_transform(data[max_items, :].todense())
     tsne = TSNE().fit_transform(
-        PCA(n_components=50).fit_transform(data[max_items, :].todense())
+        PCA(n_components=0.99).fit_transform(data[max_items, :].todense())
     )
 
     idx = range(pca.shape[0])
     label_subset = labels[max_items]
     label_subset = [cm.hsv(i / max_label) for i in label_subset[idx]]
 
-    f, ax = plt.subplots(2, 1, figsize=(10, 10))
+    plt.scatter(tsne[idx, 0], tsne[idx, 1], c=label_subset, marker=".", s=[3])
+    plt.title("TSNE Cluster Plot").set_fontsize(20)
 
-    ax[0].scatter(pca[idx, 0], pca[idx, 1], c=label_subset, marker=".", s=[3])
-    ax[0].set_title("PCA Cluster Plot")
-
-    ax[1].scatter(tsne[idx, 0], tsne[idx, 1], c=label_subset, marker=".", s=[3])
-    ax[1].set_title("TSNE Cluster Plot")
-
+    plt.xticks(fontsize=14, rotation=90)
+    plt.yticks(fontsize=14)
     plt.show()
 
 
@@ -88,7 +105,8 @@ clusters = KMeans(
 ).fit_predict(full_features)
 
 # Visualise the clustering results
-plot_tsne_pca(full_features, clusters)
+plot_pca(full_features, clusters)
+plot_tsne(full_features, clusters)
 
 
 def get_top_keywords(data, clusters, labels, n_terms):

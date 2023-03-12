@@ -63,9 +63,13 @@ def get_features_and_prepare_data(
         )
 
     strip_accents = "unicode" if stop_words else None
-
+    # try with different values for max_df and min_df for different results
     vectorizer = TfidfVectorizer(
-        stop_words=None, strip_accents=strip_accents, lowercase=True
+        stop_words=None,
+        strip_accents=strip_accents,
+        lowercase=True,
+        # max_df=0.2,
+        # min_df=100,
     )
 
     vectorizer.fit(prepared_data["oracle_text"])
